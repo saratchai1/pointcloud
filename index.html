@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mangrove TLS · ดูผลสำรวจ 3D</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230d4038'/%3E%3Cpath d='M20 7 8 27h9v7h6v-7h9Z' fill='%235ee6ac'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body class="mode-plot public-readonly">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">♧</span>
+        <div>
+          <h1>Mangrove <b>TLS</b></h1>
+          <span class="brand-sub">ภาพสำรวจและผลวัด 3D</span>
+        </div>
+      </div>
+      <div class="plot-switch">
+        <label for="plot-select">แปลงสำรวจ</label
+        ><select
+          id="plot-select"
+          data-testid="plot-select"
+          aria-label="เลือกแปลงสำรวจ"
+        >
+          <option>กำลังโหลดแปลง…</option>
+        </select>
+        <details class="export-menu">
+          <summary>↓ ส่งออกผลตรวจ</summary>
+          <div>
+            <a id="export-csv" download>CSV</a
+            ><a id="export-xlsx" download>Excel</a
+            ><a id="export-json" download>JSON</a>
+          </div>
+        </details>
+        <span class="local-badge"><i></i>เวอร์ชันดูผล</span>
+      </div>
+    </header>
+    <div class="public-banner" role="note">
+      <span>◉ เวอร์ชันดูผล · ไม่แก้ไขข้อมูลหลัก</span
+      ><span>ข้อมูลสำหรับดูร่วมกัน ไม่มีไฟล์ LAS/LAZ ต้นฉบับ</span>
+    </div>
+    <div class="workspace">
+      <aside class="tree-sidebar">
+        <div class="section-title">
+          <h2>ต้นที่ระบบตรวจพบ</h2>
+          <span class="count" id="tree-count">—</span>
+        </div>
+        <div class="search-wrap">
+          <span>⌕</span
+          ><input
+            id="tree-search"
+            data-testid="tree-search"
+            placeholder="ค้นหา Tree ID"
+            aria-label="ค้นหาต้นไม้"
+          />
+        </div>
+        <div class="filter-row">
+          <label for="qc-filter">แสดง</label
+          ><select id="qc-filter" aria-label="กรองสถานะต้นไม้">
+            <option value="all">ทุกสถานะ</option>
+            <option value="POM_REVIEW">ตรวจ POM</option>
+            <option value="REVIEW">รอตรวจทาน</option>
+            <option value="C">QC C</option>
+            <option value="reviewed">บันทึกแล้ว</option>
+          </select>
+        </div>
+        <div id="tree-list" class="tree-list" aria-label="รายการต้นไม้">
+          <p class="empty">กำลังโหลดข้อมูล…</p>
+        </div>
+        <div class="map-panel">
+          <div class="map-heading">
+            <span>ตำแหน่งต้นไม้</span><span class="muted">คลิกเพื่อเลือก</span>
+          </div>
+          <svg
+            id="tree-map"
+            viewBox="0 0 240 160"
+            role="img"
+            aria-label="แผนที่ต้นไม้ในแปลง"
+          ></svg>
+          <div class="map-footer">
+            <span><i class="green-dot"></i> แปลงที่เลือก</span
+            ><span>พิกัดเฉพาะแปลง</span>
+          </div>
+        </div>
+      </aside>
+      <main class="viewer-main">
+        <div class="mode-switch" role="group" aria-label="เลือกมุมมอง">
+          <button
+            id="whole-plot-button"
+            data-testid="whole-plot-button"
+            class="active"
+            aria-pressed="true"
+          >
+            ▦ ทั้งแปลง</button
+          ><button
+            id="tree-view-button"
+            data-testid="tree-view-button"
+            aria-pressed="false"
+            disabled
+          >
+            ♧ ตรวจรายต้น</button
+          ><span id="plot-mode-status" data-testid="plot-mode-status"
+            >ภาพรวมเต็มความสูง</span
+          >
+        </div>
+        <div class="viewer-heading">
+          <div>
+            <span class="eyebrow" id="plot-label">MANGROVE TLS</span>
+            <h2 id="selected-title">เลือกต้นไม้เพื่อเริ่มตรวจวัด</h2>
+          </div>
+          <span class="status-pill" id="selected-qc">3D REVIEW</span>
+        </div>
+        <div class="viewer-wrap" id="viewer-wrap">
+          <canvas
+            id="cloud-canvas"
+            data-testid="cloud-canvas"
+            aria-label="มุมมองลำต้นและวงวัด 3 มิติ"
+          ></canvas>
+          <div class="view-tools">
+            <button id="reset-view" title="กลับมุมมองเริ่มต้น">
+              ⌂ <span>จัดมุมมอง</span></button
+            ><button
+              id="focus-core"
+              class="plot-tool"
+              title="จัดมุมพื้นที่หลักจากจุดสำรวจ 1–99%"
+            >
+              ▣ <span>พื้นที่หลัก</span></button
+            ><button
+              id="focus-measurement"
+              class="tree-tool"
+              title="ขยายวงวัด"
+              aria-label="ขยายวงวัด"
+              disabled
+            >
+              ⌕ <span>ขยายวงวัด</span></button
+            ><button
+              id="understory-view"
+              class="plot-tool"
+              title="ตัดภาพดูส่วนล่างของแปลง"
+            >
+              ♧ <span>ส่วนล่าง</span></button
+            ><button id="top-view" title="มองจากด้านบน">
+              ⊙ <span>ด้านบน</span></button
+            ><button
+              id="toggle-plane"
+              class="active tree-tool"
+              aria-pressed="true"
+            >
+              ▱ <span>ระนาบ</span></button
+            ><button id="toggle-cloud" class="active" aria-pressed="true">
+              ⠿ <span>จุดแวดล้อม</span></button
+            ><button
+              id="toggle-labels"
+              class="plot-tool"
+              aria-label="แสดงหรือซ่อนรหัสต้นไม้"
+              aria-pressed="false"
+            >
+              ⌖ <span>รหัสต้น</span></button
+            ><button
+              id="load-detail"
+              class="plot-tool"
+              aria-label="โหลดรายละเอียดบริเวณที่มอง"
+              disabled
+            >
+              ＋ <span>รายละเอียดบริเวณนี้</span>
+            </button>
+          </div>
+          <div class="viewer-label">
+            <span class="live-dot"></span
+            ><span id="cloud-label">กำลังเตรียมมุมมอง 3D</span>
+          </div>
+          <div class="viewer-help">
+            ลากเพื่อหมุน · คลิกขวาลากเพื่อเลื่อน · เลื่อนล้อเพื่อซูม
+          </div>
+          <div class="viewer-loading" id="viewer-loading">
+            <div class="spinner"></div>
+            <span>กำลังโหลดข้อมูลเฉพาะต้น…</span>
+          </div>
+          <div class="axis-key">
+            <span class="axis-x">X</span><span class="axis-y">Y</span
+            ><span class="axis-z">Z ↑</span>
+          </div>
+        </div>
+        <div class="viewer-footer">
+          <div class="legend tree-legend">
+            <span><i style="background: #80a9a2"></i> จุดแวดล้อม</span
+            ><span><i style="background: #51ecb1"></i> ลำต้น / inlier</span
+            ><span><i style="background: #fd9b86"></i> outlier</span
+            ><span><i style="background: #efc568"></i> วงวัด</span>
+          </div>
+          <div class="legend plot-legend">
+            <span><i style="background: #76cba3"></i> จุดสำรวจเต็มความสูง</span
+            ><span
+              ><i style="background: #efc568"></i> คลิกจุดรหัสเพื่อดูต้น</span
+            >
+          </div>
+          <span id="point-count" class="muted">— จุด</span>
+        </div>
+        <p class="plot-caption">
+          <span id="plot-frame-note"
+            >มุมพื้นที่หลัก กดเต็มแปลงเพื่อดูขอบเขตทั้งหมด</span
+          ><br />ป้ายรหัสเฉพาะต้นที่ระบบตรวจพบ ยังไม่ยืนยันว่าครบทุกต้น
+        </p>
+        <section class="measurement-summary">
+          <div class="summary-header">
+            <h3>ผลการวัดแนวตัด</h3>
+            <span id="result-state" class="subtle-badge"
+              >ค่าจากการประมวลผล</span
+            >
+          </div>
+          <div class="metrics">
+            <div>
+              <span class="metric-label">เส้นผ่านศูนย์กลาง</span
+              ><strong id="diameter-value">—</strong
+              ><span class="metric-unit">ซม.</span>
+            </div>
+            <div>
+              <span class="metric-label">เส้นรอบวงจากวงกลม</span
+              ><strong id="circumference-value">—</strong
+              ><span class="metric-unit">ซม.</span>
+            </div>
+            <div>
+              <span class="metric-label" id="dbh-label">DBH ผ่านเกณฑ์</span
+              ><strong id="dbh-value" class="text-metric">ยังไม่ยืนยัน</strong>
+            </div>
+            <div>
+              <span class="metric-label">ความสูงที่วัด</span
+              ><strong id="height-value">—</strong
+              ><span class="metric-unit">ม.</span>
+            </div>
+          </div>
+          <div class="quality-strip">
+            <span>มุมครอบคลุม <b id="coverage-value">—</b></span
+            ><span>Fit RMSE <b id="rmse-value">—</b></span
+            ><span>Inliers <b id="inlier-value">—</b></span>
+          </div>
+          <p id="measurement-note" class="measurement-note">
+            ตัวเลขเป็นค่าจากเรขาคณิต ต้องตรวจพื้นดินและบริบทลำต้นก่อนยอมรับ
+          </p>
+        </section>
+        <div
+          id="status"
+          data-testid="status"
+          class="status-bar"
+          role="status"
+          aria-live="polite"
+        >
+          กำลังโหลดชุดภาพสำรวจ…
+        </div>
+      </main>
+      <aside class="inspector">
+        <div class="section-title">
+          <h2 id="inspector-title">ภาพรวมแปลง</h2>
+          <span class="subtle-badge" id="revision-label">ต้นฉบับ</span>
+        </div>
+        <section class="plot-info">
+          <h3>ภาพสำรวจเต็มแปลง</h3>
+          <p>
+            หมุนและซูมเพื่อดูลำต้นและเรือนยอดจากจุดสำรวจจริง
+            เลือกต้นจากรายการเพื่อตรวจวัดรายต้น
+          </p>
+          <div class="display-controls">
+            <label for="cloud-color">การแสดงสี</label
+            ><select id="cloud-color">
+              <option value="rgb">สีจาก LAS</option>
+              <option value="height">สีตามระดับความสูง</option></select
+            ><label for="cloud-background">พื้นหลัง</label
+            ><select id="cloud-background">
+              <option value="mid">พื้นหลังเทากลาง</option>
+              <option value="dark">พื้นหลังมืด</option></select
+            ><label class="range-label" for="point-size"
+              >ขนาดจุด <output id="point-size-value">2.0 px</output></label
+            ><input
+              id="point-size"
+              type="range"
+              min="0.7"
+              max="5"
+              step="0.1"
+              value="2"
+            /><label class="checkbox-label"
+              ><input id="depth-cue" type="checkbox" />
+              เน้นมิติและความลึก</label
+            ><label class="range-label" for="height-clip"
+              ><span id="height-clip-title">ตัดภาพเหนือพื้นประมาณการ</span>
+              <output id="height-clip-value">เต็มความสูง</output></label
+            ><input
+              id="height-clip"
+              type="range"
+              min="0.2"
+              max="20"
+              step="0.1"
+              value="20"
+            />
+            <p class="field-hint" id="height-clip-note">
+              ใช้พื้นดินประมาณการเพื่อช่วยดูภาพเท่านั้น
+              ไม่เปลี่ยนระดับวัดหรือยืนยัน DBH/POM พื้นดินยังต้องตรวจทาน
+            </p>
+            <label class="checkbox-label"
+              ><input id="auto-detail" type="checkbox" checked />
+              เพิ่มรายละเอียดอัตโนมัติเมื่อซูม</label
+            >
+          </div>
+          <dl>
+            <div>
+              <dt>จุดในไฟล์สำรวจ</dt>
+              <dd id="plot-source-count">—</dd>
+            </div>
+            <div>
+              <dt>จุดภาพรวมที่โหลด</dt>
+              <dd id="plot-render-count">—</dd>
+            </div>
+            <div>
+              <dt>ต้นที่ระบบตรวจพบ</dt>
+              <dd id="plot-tree-count">—</dd>
+            </div>
+          </dl>
+          <div class="plot-detail-hint">
+            <strong>ตรวจพื้นที่ใกล้ ๆ</strong>
+            <p>
+              ซูมหรือเลื่อนภาพไปยังบริเวณที่สนใจ
+              ระบบจะเพิ่มรายละเอียดเฉพาะบริเวณนั้น หรือกด “รายละเอียดบริเวณนี้”
+              เพื่อโหลดเอง
+            </p>
+          </div>
+          <p class="field-hint">
+            ภาพรวมลดความหนาแน่นของจุดเพื่อให้ดูได้รวดเร็ว เปิด “รหัสต้น”
+            เพื่อแสดงป้ายผลตรวจจับเบื้องต้น ซึ่งยังไม่ยืนยันว่าครบทุกต้น
+          </p>
+        </section>
+        <div class="notice">
+          <span>ⓘ</span>
+          <p>
+            พื้นดินและ registration ยังไม่ยืนยัน ผลการวัดจึงยังต้องตรวจทาน และ
+            POM จะไม่ถูกแทนเป็น DBH
+          </p>
+        </div>
+        <section class="public-tree-info" id="public-tree-info">
+          <h3>ผลแนวตัดที่เผยแพร่</h3>
+          <p>
+            ดูรายละเอียดของวงวัดและจุดที่ใช้ fit ได้
+            ข้อมูลนี้ไม่เปิดการแก้ไขระนาบหรือบันทึกการตรวจทาน
+          </p>
+          <dl>
+            <div>
+              <dt>ประเภทการวัด</dt>
+              <dd id="public-measurement-type">—</dd>
+            </div>
+            <div>
+              <dt>ความสูงที่วัด</dt>
+              <dd id="public-height">—</dd>
+            </div>
+            <div>
+              <dt>ลำต้นเอียง</dt>
+              <dd id="public-tilt">—</dd>
+            </div>
+            <div>
+              <dt>เกณฑ์ QC</dt>
+              <dd id="public-qc">—</dd>
+            </div>
+            <div>
+              <dt>ความหนาแนวตัด</dt>
+              <dd id="public-thickness">—</dd>
+            </div>
+          </dl>
+          <div class="plot-detail-hint">
+            <strong>ขอบเขตของข้อมูล</strong>
+            <p>
+              ตัวเลขจากเรขาคณิตยังไม่ใช่การรับรองความแม่นยำภาคสนาม และ POM
+              แยกจาก DBH เสมอ
+              ข้อมูลส่วนตัวของผู้ตรวจและประวัติภายในไม่ได้เผยแพร่
+            </p>
+          </div>
+        </section>
+      </aside>
+    </div>
+    <script type="module" src="/src/viewer.js"></script>
+  </body>
+</html>

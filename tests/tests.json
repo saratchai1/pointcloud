@@ -1,0 +1,111 @@
+[
+  {
+    "name": "Anonymous whole-plot viewer and four independent plots",
+    "description": "Verify all four published plots load independently without sign-in, including อุทยานแห่งชาติ ชุมพร.",
+    "viewport": "desktop",
+    "sanity": true,
+    "covers": [
+      "anonymous access",
+      "four plots",
+      "whole-plot 3D",
+      "published candidate counts",
+      "read-only banner"
+    ],
+    "steps": [
+      "Open the app in a fresh browser context without credentials and wait for the first ZIP download and 3D forest to render.",
+      "Verify the Thai read-only banner and the whole-plot mode are visible.",
+      "Select chompon_green_012 in #plot-select and verify #tree-count is 382 and the heading identifies Chumphon high-density green.",
+      "Select kb_red_015, wait for its download, and verify 12 candidates and Krabi low-density red.",
+      "Select chumpon_yellow_011, wait for its download, and verify 251 candidates and Chumphon medium-density yellow.",
+      "Select dnp_chumpon_014 in #plot-select, wait for its download, verify the name อุทยานแห่งชาติ ชุมพร and 1,136 candidates. Colour and density remain unspecified.",
+      "Check that a full-height 3D forest is visible in each plot and no sign-in screen or local-server requirement appears."
+    ],
+    "expected": "All four snapshots load anonymously with correct metadata/counts and independent rendered forests."
+  },
+  {
+    "name": "Read a tree circle and download the sanitized inventory",
+    "description": "Inspect a published stem cross-section and download its public CSV without editing any measurement.",
+    "viewport": "desktop",
+    "covers": [
+      "tree 3D",
+      "fitted circle",
+      "measurement summary",
+      "sanitized download"
+    ],
+    "steps": [
+      "Open the app and select chompon_green_012; wait for data to load.",
+      "Enter T00002 in #tree-search and click the matching tree item.",
+      "Verify the tree-view mode, diameter/circumference/height metrics, slice points, and gold fitted circle.",
+      "Click #focus-measurement to inspect the circle at a useful scale.",
+      "Open the export menu and choose CSV; confirm the download succeeds and includes the selected plot ID.",
+      "Verify #save-button and #preview-button do not exist and the right panel says the published measurement is read-only."
+    ],
+    "expected": "The published tree geometry and metrics are readable, a sanitized CSV downloads, and no edit/save controls are exposed."
+  },
+  {
+    "name": "POM remains separate and invalid searches are safe",
+    "description": "Verify an actual POM-review candidate is never represented as confirmed DBH and that a missing tree search has a clear empty state.",
+    "viewport": "desktop",
+    "covers": [
+      "POM versus DBH",
+      "unconfirmed DBH",
+      "read-only guard",
+      "negative search"
+    ],
+    "steps": [
+      "Open the app and select chompon_green_012.",
+      "Search for T00004 and select the actual POM_REVIEW candidate.",
+      "Verify the type or status indicates POM review and the confirmed DBH metric remains unconfirmed rather than being replaced with POM diameter.",
+      "Verify there is no measurement form, reviewer field, refit button, or save button.",
+      "Search for NO_SUCH_TREE_987 and verify the list shows its no-match message without showing a different tree as a match.",
+      "Clear the search and verify the original tree list returns."
+    ],
+    "expected": "POM and DBH are clearly distinct, unconfirmed DBH stays unconfirmed, no mutation controls exist, and the negative search recovers cleanly."
+  },
+  {
+    "name": "Mobile plot controls remain usable",
+    "description": "Use the public Krabi snapshot and its visualization controls on a mobile viewport.",
+    "viewport": "mobile",
+    "covers": [
+      "mobile layout",
+      "plot switch",
+      "background",
+      "point size",
+      "terrain visual clip"
+    ],
+    "steps": [
+      "Open the app at a mobile viewport and select kb_red_015.",
+      "Wait for the forest and 12-candidate list, then verify the page has no horizontal overflow.",
+      "Scroll to visualization controls; change #cloud-background to dark and back to mid.",
+      "Change #point-size and verify its displayed pixel size updates.",
+      "Use #understory-view when enabled and verify the cut is labeled as approximate terrain-relative visual clipping, not a DBH measurement.",
+      "Use #reset-view to restore full plot extent and full height."
+    ],
+    "expected": "Mobile navigation and visualization controls are readable and usable, and visual clipping never masquerades as a measurement edit."
+  },
+  {
+    "name": "Detail LOD and tree/plot transitions stay isolated",
+    "description": "Load nearby detail and switch view modes and plots without mixing geometry from different snapshots.",
+    "viewport": "desktop",
+    "covers": [
+      "bounded detail LOD",
+      "mode transitions",
+      "plot isolation",
+      "whole-plot recovery",
+      "national park plot",
+      "DNP tree circle",
+      "DNP CSV export"
+    ],
+    "steps": [
+      "Open the app and select chumpon_yellow_011.",
+      "Zoom or pan into an area and click #load-detail; wait for detail to complete and verify the point-count footer reports overview plus detail.",
+      "Select a yellow-plot tree from the list and verify its ID begins chumpon_yellow_011.",
+      "Click #whole-plot-button and verify the yellow forest returns.",
+      "Switch to kb_red_015 and verify the old yellow geometry clears while loading and the final candidate list contains only kb_red_015 IDs.",
+      "Choose a Krabi tree, then return to whole-plot mode and verify both the forest and plot metadata remain Krabi.",
+      "Switch to dnp_chumpon_014; select dnp_chumpon_014_T00001. Verify diameter about 13.55 cm, circle circumference about 42.57 cm and unconfirmed DBH, with no edit or save controls.",
+      "Download its CSV and verify the DNP plot ID; return to whole plot and then another plot to confirm isolation."
+    ],
+    "expected": "Detail and view transitions work without stale cross-plot geometry or incorrect tree IDs."
+  }
+]

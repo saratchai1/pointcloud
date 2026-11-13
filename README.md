@@ -1,7 +1,47 @@
-# Pointcloud
+# Mangrove TLS 3D Public Viewer
 
-Repository for the Mangrove Terrestrial LiDAR (TLS) public 3D viewer.
+เว็บดูผลสำรวจ TLS ป่าชายเลน 3D แบบสาธารณะ (read-only) กู้คืนจากโปรเจกต์ AppDeploy ที่เผยแพร่ก่อนหน้า และเตรียมเผยแพร่ด้วย Netlify
 
-Development work is submitted through an issue, feature branch and pull request. The viewer and its derived survey assets will be added after review of [Issue #1](https://github.com/saratchai1/pointcloud/issues/1).
+## ข้อมูลที่แสดง
 
-The existing 3D tree detection is exploratory and must not be used as certified DBH, biomass or carbon-credit evidence.
+- ชุมพร สีเขียว ความหนาแน่นสูง — `chompon_green_012`
+- ชุมพร สีเหลือง ความหนาแน่นกลาง — `chumpon_yellow_011`
+- กระบี่ สีแดง ความหนาแน่นต่ำ — `kb_red_015`
+- DNP ชุมพร — `dnp_chumpon_014`
+
+การตรวจจับลำต้นและค่าการวัดยังเป็น **ข้อมูลสำรวจเชิงทดลองที่ไม่ผ่านการรับรอง** ไม่ใช่ผลยืนยัน DBH หรือ Carbon Credit
+
+## เปิดในเครื่อง
+
+ต้องใช้ Node.js 22 หรือใหม่กว่า และเชื่อมต่ออินเทอร์เน็ตเพื่อดาวน์โหลดชุดข้อมูลที่เผยแพร่แล้วในการ build ครั้งแรก
+
+```bash
+npm ci
+npm run dev
+```
+
+เปิด `http://localhost:5173` (ในการพัฒนาบนเครื่องใหม่ที่ยังไม่มี ZIP ให้รัน `npm run prepare:assets` ก่อน)
+
+## Build สำหรับ Netlify
+
+```bash
+npm ci
+npm run build
+```
+
+ตั้งค่า Netlify ใน `netlify.toml`: Build command `npm ci && npm run build`, Publish directory `dist`.
+
+โปรเจกต์ Netlify เดิม: `mangrove-tls-team-viewer`.
+
+### ที่มาของข้อมูลและการตรวจสอบ
+
+ไฟล์สำรวจ ZIP ที่ผ่านการทำ derived data จำนวน 4 ชุด มีขนาดรวมประมาณ 124 MB และ **ไม่ได้ commit ลง Git** เพื่อป้องกันการเผยแพร่ไฟล์ต้นฉบับโดยไม่ตั้งใจ `scripts/prepare-assets.mjs` จะดาวน์โหลดจาก public mirrors เฉพาะชื่อที่ whitelist ใน `src/catalog.js` และยืนยันขนาด + SHA-256 ทุกไฟล์ก่อนอนุญาตให้ build ผ่าน
+
+การ build ครั้งแรกยังต้องพึ่งพา source mirror ของไฟล์ derived ที่เผยแพร่อยู่เดิม หาก mirror ทั้งหมดใช้ไม่ได้ build จะล้มเหลวอย่างปลอดภัย โดยไม่เผยแพร่ชุดข้อมูลที่ไม่ผ่าน checksum หลัง deploy สำเร็จ Netlify จะเสิร์ฟ ZIP เอง แต่การ redeploy ในอนาคตต้องแน่ใจว่ามีสำเนาที่ตรวจสอบแล้วอย่างน้อยหนึ่งแห่ง
+
+ไฟล์ข้อมูลเป็นไฟล์ derived ที่ได้รับอนุมัติให้เผยแพร่เท่านั้น; ห้ามเพิ่ม LAS/LAZ ต้นฉบับ ข้อมูลลับ คีย์ และไฟล์สำรวจที่ยังไม่เผยแพร่ลง repo
+
+### ปริมาณการรับส่งข้อมูล
+
+การเปิดแปลงหนึ่งจะโหลด ZIP ประมาณ 25–39 MB; ผู้ใช้จำนวนมากอาจใช้ bandwidth และโควตา hosting อย่างรวดเร็ว ควรตรวจ consumption บน Netlify ก่อนเผยแพร่ในวงกว้าง
+
